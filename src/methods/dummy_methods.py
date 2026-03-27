@@ -2,7 +2,9 @@ import numpy as np
 
 
 class DummyClassifier(object):
+    
     """
+    commit test
     This method is a dummy classifier that always predicts the most frequent
     class in the training set. It serves as a baseline and example of how
     to structure your method classes.
