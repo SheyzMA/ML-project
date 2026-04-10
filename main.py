@@ -40,8 +40,16 @@ def main(args):
     if not args.test:
         ### WRITE YOUR CODE HERE
         pass
+    #deviation
+    std_train_features = np.std(train_features)
+    #mean
+    mean_train_features = np.mean(train_features)
 
-    ### WRITE YOUR CODE HERE to do any other data processing
+    #normalizing every features of the data
+    normalized_train_features = normalize_fn(train_features, mean_train_features, std_train_features)
+    normalized_test_features = normalize_fn(test_features, mean_train_features, std_train_features)
+
+
 
     ## 3. Initialize the method you want to use.
 

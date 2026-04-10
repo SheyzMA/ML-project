@@ -28,13 +28,49 @@ class KNN(object):
         Returns:
             pred_labels (np.array): labels of shape (N,)
         """
+        self.train_data = training_data
+        self.train_labels = training_labels
 
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
+        pred_labels = self.predict(training_data)
+        
         return pred_labels
+    
+    def euclidean_dist(example, training_examples):
+        """Compute the Euclidean distance between a single example
+        vector and all training_examples.
+
+        Inputs:
+            example: shape (D,)
+            training_examples: shape (NxD) 
+        Outputs:
+            euclidean distances: shape (N,)
+        """
+        return  np.sqrt(((training_examples - example) ** 2).sum(axis=1))
+    
+
+    def find_k_nearest_neighbors(k, distances):
+        """ Find the indices of the k smallest distances from a list of distances.
+            Tip: use np.argsort()
+
+        Inputs:
+            k: integer
+            distances: shape (N,) 
+        Outputs:
+            indices of the k nearest neighbors: shape (k,)
+        """
+        indices = np.argsort(distances)[:k]
+        return indices
+    
+
+    def predict_label(neighbor_labels):
+        """Return the most frequent label in the neighbors'.
+    
+        Inputs:
+            neighbor_labels: shape (N,) 
+        Outputs:
+            most frequent label
+        """
+        return np.argmax(np.bincount(neighbor_labels))
 
     def predict(self, test_data):
         """
@@ -45,9 +81,15 @@ class KNN(object):
         Returns:
             test_labels (np.array): labels of shape (N,)
         """
-        ##
-        ###
-        #### YOUR CODE HERE!
-        ###
-        ##
+        # Compute distances
+        distances =  self.euclidean_dist(test_data, self.train_data)
+
+        # Find neighbors
+        nn_indices = self.find_k_nearest_neighbors(self.k, distances)
+
+        # Get neighbors' labels
+        neighbor_labels = self.train_labels[nn_indices]
+
+        # Pick the most common
+        best_label = self.predict_label(neighbor_labels)
         return test_labels
