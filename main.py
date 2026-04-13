@@ -72,14 +72,22 @@ def main(args):
         raise ValueError(f"Unknown method: {args.method}")
 
     ## 4. Train and evaluate the method
+    model_train_features = normalized_train_features
+    model_test_features = normalized_test_features
+
+    # Add bias only for logistic regression in this pipeline.
+    # LinearRegression already appends its own bias term internally.
+    if args.method == "logistic_regression":
+        model_train_features = append_bias_term(model_train_features)
+        model_test_features = append_bias_term(model_test_features)
 
     if args.task == "classification":
         assert args.method != "linear_regression", f"You should use linear regression as a regression method"
         # Fit the method on training data
-        preds_train = method_obj.fit(normalized_train_features, train_labels_classif)
+        preds_train = method_obj.fit(model_train_features, train_labels_classif)
 
         # Predict on unseen data
-        preds = method_obj.predict(normalized_test_features)
+        preds = method_obj.predict(model_test_features)
 
         # Report results: performance on train and valid/test sets
         acc = accuracy_fn(preds_train, train_labels_classif)
@@ -93,10 +101,10 @@ def main(args):
     elif args.task == "regression":
         assert args.method != "logistic_regression", f"You should use logistic regression as a classification method"
         # Fit the method on training data
-        preds_train = method_obj.fit(normalized_train_features, train_labels_reg)
+        preds_train = method_obj.fit(model_train_features, train_labels_reg)
 
         # Predict on unseen data
-        preds = method_obj.predict(normalized_test_features)
+        preds = method_obj.predict(model_test_features)
 
         # Report results: MSE on train and valid/test sets
         train_mse = mse_fn(preds_train, train_labels_reg)
