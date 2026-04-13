@@ -19,6 +19,13 @@ class LogisticRegression(object):
         """
         self.lr = lr
         self.max_iters = max_iters
+        self.weights = None
+        self.nb_classes = None
+
+    def softmax(self, raw_outputs) : 
+        exp_raw_outputs = np.exp(raw_outputs)
+        sum_exp = np.sum(exp_raw_outputs, axis = 1, keepdims = True)
+        return exp_raw_outputs / sum_exp
 
     def fit(self, training_data, training_labels):
         """
@@ -35,6 +42,21 @@ class LogisticRegression(object):
         #### WRITE YOUR CODE HERE!
         ###
         ##
+
+        nb_samples, nb_dimensions = training_data.shape
+        self.nb_classes = get_n_classes(training_labels)
+        self.weights = np.zeros((nb_dimensions, self.nb_classes))
+
+        one_hot_labels = label_to_onehot(training_labels, self.nb_classes)
+
+        for i in range(self.max_iters) :
+
+            raw_output = training_data @ self.weights
+            output_probas = self.softmax(raw_output)
+            grad = training_data.T @ (output_probas - one_hot_labels)
+            self.weights -= self.lr * grad
+
+        pred_labels = onehot_to_label(output_probas)
         return pred_labels
 
     def predict(self, test_data):
@@ -51,4 +73,9 @@ class LogisticRegression(object):
         #### WRITE YOUR CODE HERE!
         ###
         ##
+
+        raw_output = test_data @ self.weights
+        output_probas = self.softmax(raw_output)
+        pred_labels = onehot_to_label(output_probas)   
+
         return pred_labels
