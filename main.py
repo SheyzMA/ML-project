@@ -75,9 +75,8 @@ def main(args):
     model_train_features = normalized_train_features
     model_test_features = normalized_test_features
 
-    # Add bias only for logistic regression in this pipeline.
-    # LinearRegression already appends its own bias term internally.
-    if args.method == "logistic_regression":
+    # Add bias in the pipeline for linear and logistic regression.
+    if args.method in ("logistic_regression", "linear_regression"):
         model_train_features = append_bias_term(model_train_features)
         model_test_features = append_bias_term(model_test_features)
 
