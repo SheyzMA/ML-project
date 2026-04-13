@@ -67,7 +67,7 @@ def main(args):
 
     elif args.method == "linear_regression":
         ### WRITE YOUR CODE HERE
-        pass
+        method_obj = LogisticRegression(lr = args.lr, max_iters = args.max_iters)
 
     else:
         raise ValueError(f"Unknown method: {args.method}")
