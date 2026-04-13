@@ -44,7 +44,10 @@ class KNN(object):
                 test_labels (np.array): labels of shape (M,)
             """
 
-            return np.apply_along_axis(func1d=kNN_one_example, axis=1, arr=test_data, training_features=self.train_data, training_labels=self.train_labels, k=self.k, task_kind=self.task_kind)
+            return np.apply_along_axis(func1d=kNN_one_example, axis=1, 
+                                       arr=test_data, training_features=self.train_data, 
+                                       training_labels=self.train_labels, k=self.k, 
+                                       task_kind=self.task_kind)
         
 
 # --- Helper Functions ---

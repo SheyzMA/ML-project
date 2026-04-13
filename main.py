@@ -40,10 +40,10 @@ def main(args):
     if not args.test:
         ### WRITE YOUR CODE HERE
         pass
-    #deviation
-    std_train_features = np.std(train_features)
-    #mean
-    mean_train_features = np.mean(train_features)
+    # Compute train statistics per feature (column-wise).
+    mean_train_features = np.mean(train_features, axis=0, keepdims=True)
+    std_train_features = np.std(train_features, axis=0, keepdims=True)
+    std_train_features[std_train_features == 0] = 1.0
 
     #normalizing every features of the data
     normalized_train_features = normalize_fn(train_features, mean_train_features, std_train_features)
@@ -62,12 +62,11 @@ def main(args):
         
 
     elif args.method == "logistic_regression":
-        ### WRITE YOUR CODE HERE
-        pass
+        method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
 
     elif args.method == "linear_regression":
         ### WRITE YOUR CODE HERE
-        method_obj = LogisticRegression(lr = args.lr, max_iters = args.max_iters)
+        method_obj = LinearRegression()
 
     else:
         raise ValueError(f"Unknown method: {args.method}")
