@@ -39,7 +39,28 @@ def main(args):
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
         ### WRITE YOUR CODE HERE
-        pass
+        N = train_features.shape[0]
+        indices = np.random.permutation(N)
+
+        split_index = int(0.7 * N) # 70% train and 30% validation
+
+        train_indices = indices[:split_index]
+        validation_indices = indices[split_index :]
+
+        validation_features = train_features[validation_indices]
+        validation_labels_reg = train_labels_reg[validation_indices]
+        validation_labels_classif = train_labels_classif[validation_indices]
+
+
+        train_features = train_features[train_indices]
+        train_labels_reg = train_labels_reg[train_indices]
+        train_labels_classif = train_labels_classif[train_indices]
+        
+        test_features = validation_features
+        test_labels_reg = validation_labels_reg
+        test_labels_classif = validation_labels_classif
+    
+
     # Compute train statistics per feature (column-wise).
     mean_train_features = np.mean(train_features, axis=0, keepdims=True)
     std_train_features = np.std(train_features, axis=0, keepdims=True)
