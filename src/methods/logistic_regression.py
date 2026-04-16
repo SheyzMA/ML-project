@@ -23,9 +23,9 @@ class LogisticRegression(object):
         self.nb_classes = None
 
     def softmax(self, raw_outputs) : 
-        exp_raw_outputs = np.exp(raw_outputs)
-        sum_exp = np.sum(exp_raw_outputs, axis = 1, keepdims = True)
-        return exp_raw_outputs / sum_exp
+        exp_raw_outputs_shifted = np.exp(raw_outputs - np.max(raw_outputs, axis = 1, keepdims = True))
+        sum_exp = np.sum(exp_raw_outputs_shifted, axis = 1, keepdims = True)
+        return exp_raw_outputs_shifted / sum_exp
 
     def fit(self, training_data, training_labels):
         """
@@ -53,7 +53,7 @@ class LogisticRegression(object):
 
             raw_output = training_data @ self.weights
             output_probas = self.softmax(raw_output)
-            grad = training_data.T @ (output_probas - one_hot_labels)
+            grad = training_data.T @ (output_probas - one_hot_labels) / nb_samples
             self.weights -= self.lr * grad
 
         pred_labels = onehot_to_label(output_probas)
