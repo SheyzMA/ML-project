@@ -6,6 +6,7 @@ from src.methods.logistic_regression import LogisticRegression
 from src.methods.linear_regression import LinearRegression
 from src.methods.knn import KNN
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, mse_fn
+from src.methods.k_fold_cross_validation import run_cv_for_hyperparam_KNN, run_cv_for_hyperparam_Log_Reg
 import os
 
 np.random.seed(100)
@@ -91,6 +92,55 @@ def main(args):
 
     else:
         raise ValueError(f"Unknown method: {args.method}")
+    
+
+    ## BONUS : K-Fold Cross Validation for hyperparameter selection
+
+    if args.use_cv :
+        print("k-fold validation for the BONUS")
+
+        X = normalized_train_features
+
+        labels = train_labels_classif if args.task == "classification" else  train_labels_reg
+
+        if args.method == "knn" :
+
+            k_list = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21]
+            cv_performances = run_cv_for_hyperparam_KNN(X = X, Y = labels, K = args.cv_nb_folds, k_list = k_list, task = args.task)
+
+            print("CV results :", cv_performances)
+
+            if args.task == "classification" :
+                best_k = k_list[np.argmax(cv_performances)]
+            else :
+                best_k = k_list[np.argmin(cv_performances)]
+                
+                    
+            print("best_k is :", best_k)
+
+            method_obj = KNN(k = best_k, task_kind = args.task)
+
+        elif args.method == "logistic_regression" : 
+
+            X = append_bias_term(X)   
+
+            lr_list = [0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+            cv_performances = run_cv_for_hyperparam_Log_Reg(X = X, Y = labels, K = args.cv_nb_folds, lr_list = lr_list, max_iters = args.max_iters)
+
+            print("CV results :", cv_performances)
+
+            best_lr = lr_list[np.argmax(cv_performances)]
+            print("best_lr is :", best_lr)
+
+            method_obj = LogisticRegression(lr = best_lr, max_iters = args.max_iters)
+
+        else : 
+            print("Cross-validation not supported for the method", args.method)    
+
+
+
+
+
 
     ## 4. Train and evaluate the method
     model_train_features = normalized_train_features
@@ -184,6 +234,19 @@ if __name__ == "__main__":
              "otherwise use a validation set",
     )
     # Feel free to add more arguments here if you need!
+
+    parser.add_argument(
+        "--use_cv",
+        action="store_true",
+        help="allows us to choose whether or not to use cross-validation",
+    )
+
+    parser.add_argument(
+        "--cv_nb_folds",
+        type=int,
+        default=5,
+        help="number of folds used for k-fold cross validation",
+    )
 
     args = parser.parse_args()
     main(args)
