@@ -1,0 +1,159 @@
+\documentclass[10pt, twocolumn, letterpaper]{article}
+
+% --- Essential Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[libertine]{newtxmath}
+\usepackage{microtype}
+\usepackage[hmargin=1.8cm, vmargin=2.2cm, columnsep=0.6cm]{geometry}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+
+% --- Aesthetic Customization ---
+\definecolor{DeepTeal}{HTML}{004D40}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=DeepTeal,
+    citecolor=DeepTeal,
+    urlcolor=DeepTeal
+}
+
+\titleformat{\section}
+  {\color{DeepTeal}\normalfont\large\bfseries\scshape}{\thesection}{1em}{}[{\titlerule[0.5pt]}]
+\titleformat{\subsection}
+  {\color{DeepTeal}\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+% --- Document Info ---
+\title{
+    \vspace{-1.5em}
+    \rule{\linewidth}{1.5pt} \\
+    \Huge \textbf{CS-233: Introduction to Machine Learning} \\
+    \large \textit{Project Milestone 1 Report} \\
+    \vspace{-0.5em}
+    \rule{\linewidth}{1.5pt}
+}
+
+\author{
+    \begin{tabular}{c c c}
+        \textbf{Author 1} & \textbf{Author 2} & \textbf{Author 3} \\
+        SCIPER: 123456 & SCIPER: 234567 & SCIPER: 345678 \\
+        \textit{name1@epfl.ch} & \textit{name2@epfl.ch} & \textit{name3@epfl.ch}
+    \end{tabular}
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+We study the Gaming and Mental Health dataset provided in \texttt{features.npz}. The milestone contains two supervised learning tasks: (i) regression, where the goal is to predict a continuous addiction score, and (ii) classification, where the goal is to predict addiction levels (discrete classes).
+
+Our objective is to implement core methods from class within the provided Python skeleton, evaluate them under a consistent protocol, tune key hyperparameters, and compare final performance on held-out test data. We implemented Linear Regression (closed form), Multiclass Logistic Regression (gradient descent with softmax), and K-Nearest Neighbors (KNN) for both tasks.
+
+\section{Method}
+\subsection{Data Preparation}
+Starting from \texttt{xtrain}/\texttt{xtest} and corresponding labels, we applied the same pipeline for all methods:
+\begin{itemize}[noitemsep, nolistsep]
+    \item \textbf{Validation split:} when not in test mode, we split the original training set into 70\% training and 30\% validation using a fixed random seed (100).
+    \item \textbf{Normalization:} for each feature, we compute mean and standard deviation on the training split only, then normalize train and validation/test with these training statistics.
+    \item \textbf{Bias term:} for linear and logistic regression, we prepend a column of ones to include an intercept.
+\end{itemize}
+For numerical safety, zero standard deviations are replaced by 1.
+
+\subsection{Linear Regression}
+We use the closed-form least-squares solution. Given design matrix $\mathbf{X}$ and targets $\mathbf{y}$,
+\[
+\mathbf{w} = (\mathbf{X}^{\top}\mathbf{X})^{-1}\mathbf{X}^{\top}\mathbf{y}.
+\]
+In implementation, we use the pseudo-inverse form $\mathbf{w}=\mathbf{X}^{\dagger}\mathbf{y}$ for better numerical robustness. Prediction is $\hat{\mathbf{y}}=\mathbf{X}\mathbf{w}$.
+
+\subsection{Logistic Regression}
+For multiclass classification, we optimize softmax regression with full-batch gradient descent. Let $\mathbf{W}\in\mathbb{R}^{D\times C}$ and logits $\mathbf{Z}=\mathbf{XW}$. Probabilities are
+\[
+\mathrm{softmax}(\mathbf{Z})_{i,c}=\frac{e^{Z_{i,c}}}{\sum_{c'}e^{Z_{i,c'}}}.
+\]
+We use one-hot targets and update
+\[
+\mathbf{W} \leftarrow \mathbf{W} - \eta\,\frac{1}{N}\mathbf{X}^{\top}(\mathbf{P}-\mathbf{Y}).
+\]
+To avoid overflow in exponentials, logits are shifted by row-wise maxima before exponentiation.
+
+\subsection{K-Nearest Neighbors (KNN)}
+KNN stores training samples and predicts by nearest neighbors under Euclidean distance.
+\begin{itemize}[noitemsep, nolistsep]
+    \item \textbf{Classification:} majority vote among $k$ nearest labels.
+    \item \textbf{Regression:} average of neighbor target values.
+\end{itemize}
+We tune $k$ on the validation split and retrain on full training data before test evaluation.
+
+\section{Experiments and Results}
+\subsection{Setup and Hyperparameter Search}
+Metrics are MSE for regression, and Accuracy/Macro-F1 for classification. We searched:
+\begin{itemize}[noitemsep, nolistsep]
+    \item \textbf{KNN:} $k\in\{1,3,5,7,9,11,15,21\}$.
+    \item \textbf{Logistic Regression:} learning rate $\eta\in\{10^{-4},3\cdot10^{-4},10^{-3},3\cdot10^{-3},10^{-2},3\cdot10^{-2}\}$ and iterations $\in\{200,500,1000,2000\}$.
+\end{itemize}
+Best validation settings were: KNN-regression $k=9$, KNN-classification $k=9$, Logistic Regression $(\eta=0.01,\;\text{iters}=1000)$.
+
+\begin{table}[h]
+\centering
+\caption{Validation performance of selected hyperparameters}
+\label{tab:tuning}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Model / Hyperparameter} & \textbf{Metric} & \textbf{Validation} \\ \midrule
+KNN Reg. ($k=1$)  & MSE      & 3.552 \\
+KNN Reg. ($k=9$)  & MSE      & \textbf{1.947} \\
+KNN Reg. ($k=21$) & MSE      & 2.068 \\ \addlinespace
+KNN Cls. ($k=1$)  & Accuracy & 74.58\% \\
+KNN Cls. ($k=9$)  & Accuracy & \textbf{80.63\%} \\
+KNN Cls. ($k=21$) & Accuracy & 77.92\% \\ \addlinespace
+LogReg ($\eta=10^{-4}$, 1000) & Accuracy & 82.92\% \\
+LogReg ($\eta=0.01$, 1000)    & Accuracy & \textbf{85.00\%} \\
+LogReg ($\eta=0.03$, 2000)    & Accuracy & 84.79\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/hyperparameter_tuning.png}
+\caption{Hyperparameter tuning curves and heatmap on the validation split. Left: KNN performance vs. $k$ for classification (accuracy) and regression (MSE). Right: Logistic Regression validation accuracy across learning rates and iteration counts; the star marks the best setting $(\eta=0.01, 1000)$.}
+\label{fig:tuning}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Final comparison (validation and test)}
+\label{tab:results}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{Metric} & \textbf{Validation} & \textbf{Test} \\ \midrule
+Linear Regression & MSE & 0.931 & \textbf{0.994} \\
+KNN (Regression, $k=9$) & MSE & 1.947 & 1.865 \\ \addlinespace
+Logistic Regression ($\eta=0.01$, 1000) & Accuracy & \textbf{85.00\%} & \textbf{84.50\%} \\
+KNN (Classification, $k=9$) & Accuracy & 80.63\% & 79.75\% \\
+Logistic Regression ($\eta=0.01$, 1000) & Macro-F1 & 0.545 & 0.535 \\
+KNN (Classification, $k=9$) & Macro-F1 & 0.579 & \textbf{0.590} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion and Conclusion}
+For regression, Linear Regression clearly outperformed KNN on both validation and test MSE, suggesting that a mostly linear relationship is already captured well after normalization and bias augmentation.
+
+For classification, Logistic Regression achieved the best accuracy (84.50\% on test), while KNN reached lower accuracy but slightly better test macro-F1, indicating a different class-balance behavior. KNN with small $k$ overfit strongly (perfect training accuracy at $k=1$), while moderate $k$ improved generalization.
+
+A practical challenge in logistic training is numerical stability in the softmax computation. Using shifted logits prevented overflow/\texttt{NaN} behavior and enabled stable convergence for larger learning rates.
+
+Overall, Milestone 1 validates the end-to-end pipeline and establishes competitive baselines. For Milestone 2, promising extensions include regularized models, stronger feature engineering, and class-imbalance-aware optimization/objectives.
+
+\end{document}

@@ -1,0 +1,196 @@
+\documentclass[10pt, twocolumn, letterpaper]{article}
+
+% --- Essential Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[libertine]{newtxmath}
+\usepackage{microtype}
+\usepackage[hmargin=1.8cm, vmargin=2.0cm, columnsep=0.6cm]{geometry}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{float} % Added to strictly control figure placement
+\usepackage{colortbl} % Row shading in tables
+
+% --- Aesthetic Customization ---
+\definecolor{DeepTeal}{HTML}{004D40}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=DeepTeal,
+    citecolor=DeepTeal,
+    urlcolor=DeepTeal
+}
+
+\titleformat{\section}
+  {\color{DeepTeal}\normalfont\large\bfseries\scshape}{\thesection}{1em}{}[{\titlerule[0.5pt]}]
+\titleformat{\subsection}
+  {\color{DeepTeal}\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\captionsetup{font=small, labelfont=bf, skip=4pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{0pt}
+\raggedbottom % Prevents awkward vertical stretching across columns
+
+% --- Document Info ---
+\title{
+    \vspace{-1.5em}
+    \rule{\linewidth}{1.5pt} \\
+    \Large \textbf{CS-233: Introduction to Machine Learning} \\
+    \normalsize \textit{Project Milestone 1 Report} \\
+    \vspace{-0.5em}
+    \rule{\linewidth}{1.5pt}
+}
+
+\author{
+    \begin{tabular}{c c c}
+        \textbf{Author 1} & \textbf{Author 2} & \textbf{Author 3} \\
+        SCIPER: 123456 & SCIPER: 234567 & SCIPER: 345678 \\
+        \textit{name1@epfl.ch} & \textit{name2@epfl.ch} & \textit{name3@epfl.ch}
+    \end{tabular}
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+We evaluate traditional machine learning algorithms on the Gaming and Mental Health Dataset (2000 samples, 13 features). Milestone 1 addresses two supervised tasks:
+\begin{itemize}[noitemsep, leftmargin=*]
+    \item \textbf{Regression:} Predicting a continuous addiction score (0--10).
+    \item \textbf{Classification:} Predicting discrete addiction levels (Low, Medium, High).
+\end{itemize}
+We implemented Linear Regression, multiclass Logistic Regression, and K-Nearest Neighbors (KNN) from scratch.
+
+\section{Method}
+\subsection{Data Preparation}
+All models share a unified preprocessing pipeline:
+\begin{itemize}[noitemsep, leftmargin=*]
+    \item \textbf{Validation Split:} 70\% training / 30\% validation. Final evaluations run on a separate 400-sample test set.
+    \item \textbf{Normalization:} Features are standardized (zero mean, unit variance) using training set statistics.
+    \item \textbf{Bias Augmentation:} A column of ones is prepended for Linear and Logistic Regression.
+\end{itemize}
+
+\subsection{Algorithms}
+\begin{itemize}[noitemsep, leftmargin=*]
+    \item \textbf{Linear Regression:} Computed via the closed-form pseudo-inverse solution ($\mathbf{w} = \mathbf{X}^{\dagger}\mathbf{y}$).
+    \item \textbf{Logistic Regression:} Multiclass softmax classifier trained by full-batch gradient descent. A row-max shift is applied to logits to prevent numerical overflow.
+    \item \textbf{KNN:} Relies on Euclidean distance. Classification uses a majority vote among $k$ neighbors; regression averages their target values.
+\end{itemize}
+
+% --- Force break to start the next section at the top of the second column ---
+\newpage
+
+\section{Experiments and Results}
+Models were evaluated using Mean Squared Error (MSE) for regression, and Accuracy alongside Macro-F1 for classification to account for class imbalances.
+
+\subsection{Hyperparameter Search}
+We tuned hyperparameters on the validation split.
+
+\vspace{0.5em}
+\noindent \textbf{KNN ($k$):} Tested $k \in \{1, 3, 5, 7, 9, 11, 15, 21\}$. As seen in Figure~\ref{fig:knn}, $k=9$ is the optimal parameter, maximizing Classification Accuracy (80.6\%) and Macro-F1, while minimizing Regression MSE (1.947). Smaller $k$ severely overfit, while larger $k$ over-smooth.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/knn_tuning.png}
+\caption{KNN validation curves. \textbf{Left:} Classification metrics peak at $k{=}9$. \textbf{Right:} Regression MSE is minimized at $k{=}9$.}
+\label{fig:knn}
+\end{figure}
+
+\noindent \textbf{Logistic Regression ($\eta$, iters):} The optimal configuration is $\eta=0.3$ with 500 iterations (Figure~\ref{fig:logreg}), achieving 86.04\% validation accuracy. Lower learning rates systematically underfit within the budget.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/logreg_heatmap.png}
+\caption{LogReg validation search. \textbf{Left:} Accuracy (\%). \textbf{Right:} Macro-F1. Both metrics are best at $\eta{=}0.3$, 500 iterations (red border).}
+\label{fig:logreg}
+\end{figure*}
+
+% --- Force break to push the next subsection to the new page ---
+\newpage
+
+\subsection{Final Test Performance}
+The optimal models were retrained and evaluated on the held-out test set. Table~\ref{tab:results} summarizes the final metrics. Figure~\ref{fig:cm} and Figure~\ref{fig:dist} illustrate the classification behaviors across the imbalanced dataset.
+
+\begin{table}[H]
+\centering
+\caption{Final method comparison on validation and test sets. Shaded rows are the best method per metric.}
+\label{tab:results}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Method} & \textbf{Metric} & \textbf{Val.} & \textbf{Test} \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Regression}} \\
+\rowcolor{DeepTeal!15}
+Linear Regression        & MSE $\downarrow$ & 0.931 & 0.994 \\
+KNN Reg.\ ($k{=}9$)     & MSE $\downarrow$ & 1.947 & 1.865 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Classification}} \\
+\rowcolor{DeepTeal!15}
+LogReg ($\eta{=}0.3$, 500) & Acc.\,(\%) $\uparrow$ & 86.04 & 88.25 \\
+KNN Cls.\ ($k{=}9$)      & Acc.\,(\%) $\uparrow$ & 80.63 & 79.75 \\
+\rowcolor{DeepTeal!15}
+LogReg ($\eta{=}0.3$, 500) & Macro-F1 $\uparrow$  & 0.727 & 0.819 \\
+KNN Cls.\ ($k{=}9$)      & Macro-F1 $\uparrow$  & 0.579 & 0.590 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\linewidth]{figures/confusion_matrix.png}
+\caption{Confusion matrix for LogReg ($\eta{=}0.3$, 500 iters) on the test set. Two key errors: \emph{Medium}$\to$\emph{Low} (29/107, frequent due to class imbalance) and \emph{High}$\to$\emph{Medium} (5/13, important as severe cases are downgraded).}
+\label{fig:cm}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/class_distribution.png}
+\caption{Class distribution showing a heavy skew toward the \emph{Low} addiction class in both splits.}
+\label{fig:dist}
+\end{figure}
+\newpage
+
+\subsection{Runtime Analysis}
+Training and prediction times were measured on the full 1600-sample training set and 400 test samples (13 features).
+
+\begin{table}[H]
+\centering
+\caption{Average training and prediction times.}
+\label{tab:runtime}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Method} & \textbf{Train} & \textbf{Predict (400)} \\
+\midrule
+Linear Regression          & 0.43\,ms  & 0.01\,ms \\
+Logistic Reg.\ (500 iter.) & 119\,ms   & 0.09\,ms \\
+KNN ($k{=}9$)              & $\approx$0 & $\sim$35\,ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[noitemsep, leftmargin=*]
+    \item \textbf{Linear Regression:} Fastest overall — trains in under 1\,ms with equally instant prediction, as no iterative optimization is needed.
+    \item \textbf{Logistic Regression:} Takes $\sim$119\,ms to train (500 gradient steps on 1600 samples), but predicts in under 0.1\,ms once the weights are learned.
+    \item \textbf{KNN:} Requires no training at all (it simply stores the data), but is the slowest at prediction ($\sim$35\,ms) since it must scan all training points for every new query.
+\end{itemize}
+
+\section{Discussion and Conclusion}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Regression:} Linear Regression significantly outperformed KNN (Test MSE 0.994 vs.\ 1.865), confirming a strong underlying linear relationship in the features. KNN remains weaker here because local averaging smooths predictions and cannot capture the same global linear trend as effectively.
+    \item \textbf{Classification:} Logistic Regression is vastly superior to KNN (88.25\% accuracy, F1 0.819 vs.\ 0.590). This is expected: Logistic Regression learns a global discriminative boundary from all samples, while KNN makes local distance-based decisions that are less reliable in 13-dimensional, imbalanced data where minority-class neighbors are sparse. From Figure~\ref{fig:cm}, two errors stand out: \emph{Medium}$\to$\emph{Low} (29/107, driven by class imbalance) and \emph{High}$\to$\emph{Medium} (5/13), where severe cases are missed --- their low recall ($8/13 \approx 62\%$) reduces Macro-F1, which is why it is reported alongside accuracy.
+\end{itemize}
+
+\paragraph{Conclusion:} Linear Regression is the best regressor on this dataset (test MSE 0.994), while Logistic Regression is the best classifier (88.25\% accuracy, Macro-F1 0.819). Overall, the results indicate that global parametric models capture the structure of this dataset more effectively than local neighbor-based methods, especially under class imbalance.
+
+\end{document}
